@@ -17,6 +17,8 @@
     "svelte": "^3.0.0"
   },
   "dependencies": {
+    "media-query-manager": "0.0.1",
+    "musical-ratios": "0.0.1",
     "sirv-cli": "^1.0.0"
   }
 }
