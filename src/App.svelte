@@ -11,7 +11,8 @@
     let open = false;
     let bpStep = 1;
     let fontStep = 1;
-    let cssVars = {};
+    let cssVars;
+    let lineHeightFactor = 1.50;
 
     function scaledSize(ratio, level, size = 1) {
         return size * ratioToPower(ratio, level);
@@ -57,11 +58,17 @@
             let size = scaledSize(ratio, i, baseFont);
             size = isNaN(size) ? baseFont : size;
             cssVars[`modular-size-n${-i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
+            let lineHeight = lineHeightFactor * (size / baseBrowserSize).toFixed(4);
+            lineHeight = lineHeight < .9 ? .9 * lineHeightFactor : lineHeight;
+            cssVars[`modular-line-height-n${-i}`] = lineHeight.toFixed(4) + 'rem';
         }
         for (let i = 0; i <= 10; i++) {
             let size = scaledSize(ratio, i, baseFont);
             size = isNaN(size) ? baseFont : size;
             cssVars[`modular-size-l${i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
+            let lineHeight = lineHeightFactor * (size / baseBrowserSize).toFixed(4);
+            lineHeight = lineHeight < .9 ? .9 * lineHeightFactor : lineHeight;
+            cssVars[`modular-line-height-l${i}`] = lineHeight.toFixed(4) + 'rem';
         }
         console.log(cssVars);
         cssProps.set(cssVars);
@@ -116,7 +123,7 @@
         position: relative;
         z-index: 1;
         left: 100%;
-        top: 12%;
+        top: -50vh;
         background: grey;
     }
 
@@ -135,7 +142,7 @@
     .row-flex {
         width: 80%;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
         align-items: center;
@@ -189,6 +196,11 @@
         <input type=number bind:value={baseFont} min=1 max=32 step=1>
         <input type=range bind:value={baseFont} min=1 max=32 step=1>
     </label>
+    <label>
+        Line Height Factor (line height * baseFont)
+        <input type=number bind:value={lineHeightFactor} min=1 max=2 step=.01>
+        <input type=range bind:value={lineHeightFactor} min=1 max=2 step=.01>
+    </label>
     <div class="opener" on:click="{() => open = !open}"></div>
 </div>
 
@@ -210,12 +222,14 @@
 <div class="page">
     <h1 style="font-size: 96px">Font</h1>
     {#each Array(5).fill(0).map((e, i) => -(i + 1)).reverse() as i}
-        <p style="font-size: var(--modular-size-n{-i})">Level: {i}</p>
-        <p style="font-size: var(--modular-size-n{-i})">Px: {cssVars[`modular-size-n${-i}`]}</p>
+        <p style="font-size: var(--modular-size-n{-i}); line-height: var(--modular-line-height-n{-i})">Level: {i}</p>
+        <p style="font-size: var(--modular-size-n{-i}); line-height: var(--modular-line-height-n{-i})">
+            Px: {cssVars[`modular-size-n${-i}`]}</p>
     {/each}
     {#each range(0, 6) as i}
-        <p style="font-size: var(--modular-size-l{i})">Level: {i}</p>
-        <p style="font-size: var(--modular-size-l{i})">Px: {cssVars[`modular-size-l${i}`]}</p>
+        <p style="font-size: var(--modular-size-l{i}); line-height: var(--modular-line-height-l{i})">Level: {i}</p>
+        <p style="font-size: var(--modular-size-l{i}); line-height: var(--modular-line-height-l{i})">
+            Px: {cssVars[`modular-size-l${i}`]}</p>
     {/each}
 </div>
 
@@ -223,14 +237,18 @@
     <h1 style="font-size: 96px">Margin/Padding</h1>
     <div class="row-flex">
         {#each Array(5).fill(0).map((e, i) => -(i + 1)).reverse() as i}
-            <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
-            <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-n${-i}`]}</p>
-            <div style="width: var(--modular-size-n{-i}); height: var(--modular-size-n{-i}); background: lightblue;"></div>
+            <div>
+                <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
+                <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-n${-i}`]}</p>
+                <div style="width: var(--modular-size-n{-i}); height: var(--modular-size-n{-i}); background: lightblue;"></div>
+            </div>
         {/each}
         {#each range(0, 6) as i}
-            <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
-            <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-l${i}`]}</p>
-            <div style="width: var(--modular-size-l{i}); height: var(--modular-size-l{i}); background: lightblue;"></div>
+            <div style="display: flex; align-items: center; flex-direction: column">
+                <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
+                <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-l${i}`]}</p>
+                <div style="width: var(--modular-size-l{i}); height: var(--modular-size-l{i}); background: lightblue;"></div>
+            </div>
         {/each}
     </div>
 </div>
