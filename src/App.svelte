@@ -11,6 +11,7 @@
     let open = false;
     let bpStep = 1;
     let fontStep = 1;
+    let cssVars = {};
 
     function scaledSize(ratio, level, size = 1) {
         return size * ratioToPower(ratio, level);
@@ -50,19 +51,17 @@
 
     let bpRatios = bpValues.reduce((a, c) => ({...a, [c]: MusicalRatios.PerfectFifth}), {});
     $: {
-        const cssVars = {};
+        cssVars = {};
         const ratio = MusicalRatios[bpRatios[active]];
         for (let i = -10; i < 0; i++) {
             let size = scaledSize(ratio, i, baseFont);
-            console.log(size);
             size = isNaN(size) ? baseFont : size;
-            console.log(size);
-            cssVars[`--modular-font-size-n${-i}`] = `${size / baseBrowserSize}em`;
+            cssVars[`modular-size-n${-i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
         }
         for (let i = 0; i <= 10; i++) {
             let size = scaledSize(ratio, i, baseFont);
             size = isNaN(size) ? baseFont : size;
-            cssVars[`--modular-font-size-l${i}`] = `${size / baseBrowserSize}em`;
+            cssVars[`modular-size-l${i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
         }
         console.log(cssVars);
         cssProps.set(cssVars);
@@ -126,10 +125,24 @@
     }
 
     .page {
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
         align-items: center;
+        border-bottom: 100px solid yellow;
+    }
+
+    .row-flex {
+        width: 80%;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .row-flex div {
+        margin: 48px;
     }
 
 </style>
@@ -168,6 +181,11 @@
     <h1>Font</h1>
     <label>
         Base Font Size
+        <input type=number bind:value={baseBrowserSize} min=1 max=32 step=1>
+        <input type=range bind:value={baseBrowserSize} min=1 max=32 step=1>
+    </label>
+    <label>
+        Font Size
         <input type=number bind:value={baseFont} min=1 max=32 step=1>
         <input type=range bind:value={baseFont} min=1 max=32 step=1>
     </label>
@@ -190,11 +208,29 @@
 </div>
 
 <div class="page">
-    <h1 fontSize="36">Font</h1>
+    <h1 style="font-size: 96px">Font</h1>
     {#each Array(5).fill(0).map((e, i) => -(i + 1)).reverse() as i}
-        <span style="font-size: var(--modular-font-size-n{-i})">Level: {i}</span>
+        <p style="font-size: var(--modular-size-n{-i})">Level: {i}</p>
+        <p style="font-size: var(--modular-size-n{-i})">Px: {cssVars[`modular-size-n${-i}`]}</p>
     {/each}
     {#each range(0, 6) as i}
-        <span style="font-size: var(--modular-font-size-l{i})">Level: {i}</span>
+        <p style="font-size: var(--modular-size-l{i})">Level: {i}</p>
+        <p style="font-size: var(--modular-size-l{i})">Px: {cssVars[`modular-size-l${i}`]}</p>
     {/each}
+</div>
+
+<div class="page">
+    <h1 style="font-size: 96px">Margin/Padding</h1>
+    <div class="row-flex">
+        {#each Array(5).fill(0).map((e, i) => -(i + 1)).reverse() as i}
+            <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
+            <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-n${-i}`]}</p>
+            <div style="width: var(--modular-size-n{-i}); height: var(--modular-size-n{-i}); background: lightblue;"></div>
+        {/each}
+        {#each range(0, 6) as i}
+            <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
+            <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-l${i}`]}</p>
+            <div style="width: var(--modular-size-l{i}); height: var(--modular-size-l{i}); background: lightblue;"></div>
+        {/each}
+    </div>
 </div>
