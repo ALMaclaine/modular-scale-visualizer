@@ -1,132 +1,200 @@
 <script>
-	import {MusicalRatios, ratioToPower} from 'musical-ratios';
-	import {MediaQueryManager} from 'media-query-manager';
-	let baseViewWidth = 1280;
-	let ratioSelection = MusicalRatios[MusicalRatios.PerfectFifth];
-	let bpValues;
-	let lowBpRange = -3;
-	let highBprange = 3;
-	let open = false;
-	let step = 1;
+    import {MusicalRatios, ratioToPower} from 'musical-ratios';
+    import {MediaQueryManager} from 'media-query-manager';
+    import cssProps from 'css-custom-properties';
 
-	const range = (start, end, stpSize = 1) => {
-		const length = end - start + 1;
-		const ratio = MusicalRatios[ratioSelection];
-		const out = [];
-		let count = 0;
+    let bpValues = [];
+    let baseViewWidth = 1280;
+    let ratioSelection = MusicalRatios[MusicalRatios.PerfectFifth];
+    let lowBpRange = -3;
+    let highBprange = 3;
+    let open = false;
+    let bpStep = 1;
+    let fontStep = 1;
 
-		for(let i = -stpSize; i > start - 1; i -= stpSize) {
-			out.push(start + stpSize * count++);
-		}
+    function scaledSize(ratio, level, size = 1) {
+        return size * ratioToPower(ratio, level);
+    }
 
-		out.push(0);
-		count = 1;
+    const range = (start, end, stpSize = 1) => {
+        const out = [];
+        let count = 0;
 
-		for(let i = stpSize; i < end + 1; i += stpSize) {
-			out.push(stpSize * count++);
-		}
+        for (let i = -stpSize; i > start - 1; i -= stpSize) {
+            out.push(start + stpSize * count++);
+        }
 
-		return out;
-	}
+        out.push(0);
+        count = 1;
 
-	let mediaManager = new MediaQueryManager(range(lowBpRange, highBprange, step).map(e => baseViewWidth * ratioToPower(MusicalRatios.PerfectFifth, e)));
-	let active = mediaManager.active;
+        for (let i = stpSize; i < end + 1; i += stpSize) {
+            out.push(stpSize * count++);
+        }
 
-	const updateActive = () => active = mediaManager.active;
+        return out;
+    }
 
-	$: {
-		const ratio = MusicalRatios[ratioSelection];
-		const newBreaks = range(lowBpRange, highBprange, step).map(e => baseViewWidth * ratioToPower(ratio, e));
-		mediaManager = new MediaQueryManager(newBreaks);
+    const initRange = range(lowBpRange, highBprange, bpStep);
+    let mediaManager = new MediaQueryManager(initRange.map(e => baseViewWidth * ratioToPower(MusicalRatios.PerfectFifth, e)));
+    let active = mediaManager.active;
 
-		mediaManager.addEventListener('change', updateActive);
+    let baseBrowserSize = 10;
+    let baseFont = 16;
 
-		bpValues = mediaManager.breaks;
-	}
+    $: {
+        const html = document.querySelector('html');
+        if (html) {
+            html.style.fontSize = `${baseBrowserSize / 16 * 100}%`
+        }
+    }
+
+    let bpRatios = bpValues.reduce((a, c) => ({...a, [c]: MusicalRatios.PerfectFifth}), {});
+    $: {
+        const cssVars = {};
+        const ratio = MusicalRatios[bpRatios[active]];
+        for (let i = -10; i < 0; i++) {
+            let size = scaledSize(ratio, i, baseFont);
+            console.log(size);
+            size = isNaN(size) ? baseFont : size;
+            console.log(size);
+            cssVars[`--modular-font-size-n${-i}`] = `${size / baseBrowserSize}em`;
+        }
+        for (let i = 0; i <= 10; i++) {
+            let size = scaledSize(ratio, i, baseFont);
+            size = isNaN(size) ? baseFont : size;
+            cssVars[`--modular-font-size-l${i}`] = `${size / baseBrowserSize}em`;
+        }
+        console.log(cssVars);
+        cssProps.set(cssVars);
+    }
+
+    const updateActive = () => active = mediaManager.active;
+
+    $: {
+        const ratio = MusicalRatios[ratioSelection];
+        const newBreaks = range(lowBpRange, highBprange, bpStep).map(e => baseViewWidth * ratioToPower(ratio, e));
+        mediaManager = new MediaQueryManager(newBreaks);
+
+        mediaManager.addEventListener('change', updateActive);
+
+        bpValues = mediaManager.breaks;
+    }
 
 </script>
 
 <style>
-	.controls {
-		width: 300px;
-		height: 100%;
-		position: fixed;
-		z-index: 2;
-		box-shadow: 2px 2px 2px rgba(0, 0, 0, .3);
-		background: white;
-		left: -300px;
-	}
+    .controls {
+        width: 300px;
+        height: 100%;
+        position: fixed;
+        z-index: 2;
+        box-shadow: 2px 2px 2px rgba(0, 0, 0, .3);
+        background: white;
+        left: -300px;
+    }
 
-	.open {
-		left: 0;
-	}
+    .open {
+        left: 0;
+    }
 
-	.bp-info {
-		position: fixed;
-		bottom: 10px;
-		right: 10px;
-		background: rgba(0, 0, 0, .5);
-		border-radius: 4px;
-		padding: 32px;
-	}
+    .bp-info {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, .5);
+        border-radius: 4px;
+        padding: 32px;
+    }
 
-	label {
-		display: flex;
-		flex-direction: column;
-	}
+    label {
+        display: flex;
+        flex-direction: column;
+    }
 
-	.opener {
-		width: 25px;
-		height: 50px;
-		position: relative;
-		z-index: 1;
-		left: 100%;
-		top: 12%;
-		background: grey;
-	}
+    .opener {
+        width: 25px;
+        height: 50px;
+        position: relative;
+        z-index: 1;
+        left: 100%;
+        top: 12%;
+        background: grey;
+    }
 
-	.selected {
-		color: red;
-	}
+    .selected {
+        color: red;
+    }
+
+    .page {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
 </style>
 
 <div class="controls {open ? 'open' : ''}">
-	<label>
-		Breakpoint Ratio
-	<select bind:value={ratioSelection} on:change={updateActive}>
-		{#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as rat}
-			<option value={rat}>
-				{rat}
-			</option>
-		{/each}
-	</select>
-	</label>
-	<label>
-		Low BP
-		<input type=number bind:value={lowBpRange} on:input={updateActive} min=-8 max=0>
-		<input type=range bind:value={lowBpRange} on:input={updateActive} min=-8 max=0>
-	</label>
-	<label>
-		High BP
-		<input type=number bind:value={highBprange} on:input={updateActive} min=0 max=8>
-		<input type=range bind:value={highBprange} on:input={updateActive} min=0 max=8>
-	</label>
-	<label>
-		Step Size
-		<input type=number bind:value={step} on:input={updateActive} min=.1 max=2 step=.1>
-		<input type=range bind:value={step} on:input={updateActive} min=.1 max=2 step=.1>
-	</label>
-	<label>
-		BaseViewWidth
-		<input type=number bind:value={baseViewWidth} on:input={updateActive} min=640 max=2560>
-	</label>
-	<div class="opener" on:click="{() => open = !open}"></div>
+    <h1>General</h1>
+    <label>
+        Breakpoint Ratio
+        <select bind:value={ratioSelection} on:blur={updateActive}>
+            {#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as rat}
+                <option value={rat}>
+                    {rat}
+                </option>
+            {/each}
+        </select>
+    </label>
+    <label>
+        Low BP
+        <input type=number bind:value={lowBpRange} on:input={updateActive} min=-8 max=0 step=1>
+        <input type=range bind:value={lowBpRange} on:input={updateActive} min=-8 max=0 step=1>
+    </label>
+    <label>
+        High BP
+        <input type=number bind:value={highBprange} on:input={updateActive} min=0 max=8 step=1>
+        <input type=range bind:value={highBprange} on:input={updateActive} min=0 max=8 step=1>
+    </label>
+    <label>
+        Step Size
+        <input type=number bind:value={bpStep} on:input={updateActive} min=.1 max=2 step=.1>
+        <input type=range bind:value={bpStep} on:input={updateActive} min=.1 max=2 step=.1>
+    </label>
+    <label>
+        BaseViewWidth
+        <input type=number bind:value={baseViewWidth} on:input={updateActive} min=640 max=2560>
+    </label>
+    <h1>Font</h1>
+    <label>
+        Base Font Size
+        <input type=number bind:value={baseFont} min=1 max=32 step=1>
+        <input type=range bind:value={baseFont} min=1 max=32 step=1>
+    </label>
+    <div class="opener" on:click="{() => open = !open}"></div>
 </div>
 
 <div class='bp-info'>
-	<ol start={lowBpRange}>
-		{#each bpValues as bp}
-			<li class="{bp === active ? 'selected' : ''}">{Math.round(bp)}</li>
-		{/each}
-	</ol>
+    <ol start={lowBpRange}>
+        {#each bpValues as bp}
+            <li class="{bp === active ? 'selected' : ''}">{Math.round(bp)}</li>
+            <select bind:value={bpRatios[bp]}>
+                {#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as rat}
+                    <option value={rat}>
+                        {rat}
+                    </option>
+                {/each}
+            </select>
+        {/each}
+    </ol>
+</div>
+
+<div class="page">
+    <h1 fontSize="36">Font</h1>
+    {#each Array(5).fill(0).map((e, i) => -(i + 1)).reverse() as i}
+        <span style="font-size: var(--modular-font-size-n{-i})">Level: {i}</span>
+    {/each}
+    {#each range(0, 6) as i}
+        <span style="font-size: var(--modular-font-size-l{i})">Level: {i}</span>
+    {/each}
 </div>
