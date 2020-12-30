@@ -15,13 +15,15 @@
 	let mediaManager = new MediaQueryManager(range(lowBpRange, highBprange).map(e => baseViewWidth * ratioToPower(MusicalRatios.PerfectFifth, e)));
 	let active = mediaManager.active;
 
+	const updateActive = () => active = mediaManager.active;
+
 	$: {
 		const ratio = MusicalRatios[ratioSelection];
 		const newBreaks = range(lowBpRange, highBprange).map(e => baseViewWidth * ratioToPower(ratio, e));
 		mediaManager = new MediaQueryManager(newBreaks);
 
 		mediaManager.addEventListener('change', () => {
-			active = mediaManager.active;
+			updateActive();
 		});
 
 		bpValues = mediaManager.breaks;
@@ -71,7 +73,7 @@
 	</label>
 	<label>
 		BaseViewWidth
-		<input type=number bind:value={baseViewWidth} min=640 max=2560>
+		<input type=number bind:value={baseViewWidth} on:input={updateActive} min=640 max=2560>
 	</label>
 </nav>
 
