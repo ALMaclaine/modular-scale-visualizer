@@ -13,27 +13,28 @@
     let fontStep = 1;
     let cssVars;
     let lineHeightFactor = 1.50;
+    let bpWidths;
 
     function scaledSize(ratio, level, size = 1) {
         return size * ratioToPower(ratio, level);
     }
 
     const range = (start, end, stpSize = 1) => {
-        const out = [];
+        const out = new Set();
         let count = 0;
 
         for (let i = -stpSize; i > start - 1; i -= stpSize) {
-            out.push(start + stpSize * count++);
+            out.add(start + stpSize * count++);
         }
 
-        out.push(0);
+        out.add(0);
         count = 1;
 
         for (let i = stpSize; i < end + 1; i += stpSize) {
-            out.push(stpSize * count++);
+            out.add(stpSize * count++);
         }
-
-        return out;
+        console.log(out);
+        return Array.from(out);
     }
 
     const initRange = range(lowBpRange, highBprange, bpStep);
@@ -79,11 +80,17 @@
     $: {
         const ratio = MusicalRatios[ratioSelection];
         const newBreaks = range(lowBpRange, highBprange, bpStep).map(e => baseViewWidth * ratioToPower(ratio, e));
+        mediaManager.removeEventListener('change', updateActive);
         mediaManager = new MediaQueryManager(newBreaks);
 
         mediaManager.addEventListener('change', updateActive);
 
         bpValues = mediaManager.breaks;
+        const newWidths = [bpValues[0]];
+        for (let i = 1; i < bpValues.length - 1; i++) {
+            newWidths.push(bpValues[i] - bpValues[i - 1]);
+        }
+        bpWidths = newWidths;
     }
 
 </script>
@@ -107,7 +114,7 @@
         position: fixed;
         bottom: 10px;
         right: 10px;
-        background: rgba(0, 0, 0, .5);
+        background: #999;
         border-radius: 4px;
         padding: 32px;
     }
@@ -217,6 +224,20 @@
             </select>
         {/each}
     </ol>
+</div>
+
+<div style="height: 100vh; display: flex; overflow: scroll;">
+    {#each bpWidths as bpWidth, i}
+        <div style="display: inline-block;
+        height: 100%; min-width: {bpWidth}px;
+        background-color: hsl({(i * 45)%360}, 100%, 50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        ">
+            <p style="font-size: {196/bpValues.length}px">{bpValues[i].toFixed(2)}px</p>
+        </div>
+    {/each}
 </div>
 
 <div class="page">
