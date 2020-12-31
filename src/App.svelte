@@ -12,7 +12,7 @@
     let bpStep = 1;
     let fontStep = 1;
     let cssVars;
-    let lineHeightFactor = 1.50;
+    let lineHeightFactor = 1.20;
     let bpWidths;
 
     function scaledSize(ratio, level, size = 1) {
@@ -271,5 +271,14 @@
                 <div style="width: var(--modular-size-l{i}); height: var(--modular-size-l{i}); background: lightblue;"></div>
             </div>
         {/each}
+    </div>
+</div>
+
+<div class="page" style="justify-content: center;">
+    <div style="display: flex; flex-direction: column; align-items: center; box-shadow: 2px 2px 8px rgba(0, 0, 0, .4); border-radius: 2px; padding: var(--modular-size-l1)">
+        <h1 style="text-align: center; font-size: var(--modular-size-l3); line-height: var(--modular-line-height-l3); margin-bottom: var(--modular-size-l0);">Hello</h1>
+        <h2 style="text-align: center; font-size: var(--modular-size-l2); line-height: var(--modular-line-height-l2); margin-bottom: var(--modular-size-l0);">Design Made Simple</h2>
+        <h3 style="text-align: center; font-size: var(--modular-size-l0); line-height: var(--modular-line-height-l0); margin-bottom: var(--modular-size-n1);">Would you like to know more?</h3>
+        <button style="text-align: center; font-size: var(--modular-size-l0); line-height: var(--modular-line-height-l0); margin-bottom: var(--modular-size-n1);">Learn More</button>
     </div>
 </div>
