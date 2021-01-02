@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "css-custom-properties": "^0.1.0",
-    "media-query-manager": "0.0.1",
-    "musical-ratios": "0.0.1",
+    "empxrem": "0.0.4",
+    "musical-ratios": "^0.0.4",
+    "rhythmic-breakpoints": "0.0.10",
+    "rhythmic-scale": "0.0.1",
     "sirv-cli": "^1.0.0"
   }
 }

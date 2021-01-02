@@ -1,96 +1,80 @@
 <script>
-    import {MusicalRatios, ratioToPower} from 'musical-ratios';
-    import {MediaQueryManager} from 'media-query-manager';
+    import {MusicalRatios, ratioToInterval, intervalToRatio} from 'musical-ratios';
     import cssProps from 'css-custom-properties';
+    import {onMount} from 'svelte';
+    import {RhythmicBreakpoints} from 'rhythmic-breakpoints';
+    import {RhythmicScale} from 'rhythmic-scale';
 
-    let bpValues = [];
     let baseViewWidth = 1280;
-    let ratioSelection = MusicalRatios[MusicalRatios.PerfectFifth];
-    let lowBpRange = -3;
-    let highBprange = 3;
+    let lowBpCount = -3;
+    let highBpCount = 3;
     let open = false;
     let bpStep = 1;
-    let fontStep = 1;
     let cssVars;
-    let lineHeightFactor = 1.20;
     let bpWidths;
+    let rhythmicScale = new RhythmicScale({baseFont: 16});
 
-    function scaledSize(ratio, level, size = 1) {
-        return size * ratioToPower(ratio, level);
+    function handleUpdateBaseFont() {
+        console.log('?');
+        document.querySelector('html').style.fontSize = `${rhythmicScale.baseFont / 16 * 100}%`
     }
 
-    const range = (start, end, stpSize = 1) => {
-        const out = new Set();
-        let count = 0;
+    onMount(() => {
+        handleUpdateBaseFont();
+    });
 
-        for (let i = -stpSize; i > start - 1; i -= stpSize) {
-            out.add(start + stpSize * count++);
-        }
-
-        out.add(0);
-        count = 1;
-
-        for (let i = stpSize; i < end + 1; i += stpSize) {
-            out.add(stpSize * count++);
-        }
-        console.log(out);
-        return Array.from(out);
-    }
-
-    const initRange = range(lowBpRange, highBprange, bpStep);
-    let mediaManager = new MediaQueryManager(initRange.map(e => baseViewWidth * ratioToPower(MusicalRatios.PerfectFifth, e)));
+    let intervalSelection = ratioToInterval(MusicalRatios.PerfectFifth);
+    let mediaManager = new RhythmicBreakpoints();
+    const updateActive = () => active = mediaManager.active;
+    mediaManager.addEventListener('change', updateActive);
+    let bpValues;
     let active = mediaManager.active;
 
-    let baseBrowserSize = 10;
-    let baseFont = 16;
-
+    // run when intervalSelection, baseWidth, highBpCount, lowBpCount, ratio, bpStep are updated
     $: {
-        const html = document.querySelector('html');
-        if (html) {
-            html.style.fontSize = `${baseBrowserSize / 16 * 100}%`
-        }
-    }
+        const ratio = intervalToRatio(intervalSelection);
+        if(mediaManager) mediaManager.removeEventListener('change', updateActive);
 
-    let bpRatios = bpValues.reduce((a, c) => ({...a, [c]: MusicalRatios.PerfectFifth}), {});
-    $: {
-        cssVars = {};
-        const ratio = MusicalRatios[bpRatios[active]];
-        for (let i = -10; i < 0; i++) {
-            let size = scaledSize(ratio, i, baseFont);
-            size = isNaN(size) ? baseFont : size;
-            cssVars[`modular-size-n${-i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
-            let lineHeight = lineHeightFactor * (size / baseBrowserSize).toFixed(4);
-            lineHeight = lineHeight < .9 ? .9 * lineHeightFactor : lineHeight;
-            cssVars[`modular-line-height-n${-i}`] = lineHeight.toFixed(4) + 'rem';
-        }
-        for (let i = 0; i <= 10; i++) {
-            let size = scaledSize(ratio, i, baseFont);
-            size = isNaN(size) ? baseFont : size;
-            cssVars[`modular-size-l${i}`] = (size / baseBrowserSize).toFixed(4) + 'rem';
-            let lineHeight = lineHeightFactor * (size / baseBrowserSize).toFixed(4);
-            lineHeight = lineHeight < .9 ? .9 * lineHeightFactor : lineHeight;
-            cssVars[`modular-line-height-l${i}`] = lineHeight.toFixed(4) + 'rem';
-        }
-        console.log(cssVars);
-        cssProps.set(cssVars);
-    }
-
-    const updateActive = () => active = mediaManager.active;
-
-    $: {
-        const ratio = MusicalRatios[ratioSelection];
-        const newBreaks = range(lowBpRange, highBprange, bpStep).map(e => baseViewWidth * ratioToPower(ratio, e));
-        mediaManager.removeEventListener('change', updateActive);
-        mediaManager = new MediaQueryManager(newBreaks);
+        mediaManager = new RhythmicBreakpoints({
+            baseWidth: baseViewWidth,
+            highBpCount,
+            lowBpCount,
+            ratio,
+            stepSize: bpStep
+        });
 
         mediaManager.addEventListener('change', updateActive);
-
+        updateActive();
         bpValues = mediaManager.breaks;
+
         const newWidths = [bpValues[0]];
         for (let i = 1; i < bpValues.length - 1; i++) {
             newWidths.push(bpValues[i] - bpValues[i - 1]);
         }
         bpWidths = newWidths;
+    }
+
+    let bpIntervals = mediaManager.breakpointRatioMap;
+    function handleIntervalChange(e, bp) {
+        mediaManager.setBpInterval(bp, e.target.value);
+        bpIntervals = mediaManager.breakpointRatioMap;
+    }
+
+    // runs when active, size, baseSize, baseBrowserFontSize, lineHeightFactor change
+    $: {
+        cssVars = {};
+        const ratio = intervalToRatio(bpIntervals.get(active));
+        for (let i = -10; i < 0; i++) {
+            const scaledStyles = rhythmicScale.scaledStyles(ratio, i, .9);
+            cssVars[`modular-size-n${-i}`] = scaledStyles.size;
+            cssVars[`modular-line-height-n${-i}`] = scaledStyles.lineHeight;
+        }
+        for (let i = 0; i <= 10; i++) {
+            const scaledStyles = rhythmicScale.scaledStyles(ratio, i, .9);
+            cssVars[`modular-size-l${i}`] = scaledStyles.size;
+            cssVars[`modular-line-height-l${i}`] = scaledStyles.lineHeight;
+        }
+        cssProps.set(cssVars);
     }
 
 </script>
@@ -165,7 +149,7 @@
     <h1>General</h1>
     <label>
         Breakpoint Ratio
-        <select bind:value={ratioSelection} on:blur={updateActive}>
+        <select bind:value={intervalSelection} on:blur={updateActive}>
             {#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as rat}
                 <option value={rat}>
                     {rat}
@@ -175,13 +159,13 @@
     </label>
     <label>
         Low BP
-        <input type=number bind:value={lowBpRange} on:input={updateActive} min=-8 max=0 step=1>
-        <input type=range bind:value={lowBpRange} on:input={updateActive} min=-8 max=0 step=1>
+        <input type=number bind:value={lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
+        <input type=range bind:value={lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
     </label>
     <label>
         High BP
-        <input type=number bind:value={highBprange} on:input={updateActive} min=0 max=8 step=1>
-        <input type=range bind:value={highBprange} on:input={updateActive} min=0 max=8 step=1>
+        <input type=number bind:value={highBpCount} on:input={updateActive} min=0 max=8 step=1>
+        <input type=range bind:value={highBpCount} on:input={updateActive} min=0 max=8 step=1>
     </label>
     <label>
         Step Size
@@ -195,30 +179,30 @@
     <h1>Font</h1>
     <label>
         Base Font Size
-        <input type=number bind:value={baseBrowserSize} min=1 max=32 step=1>
-        <input type=range bind:value={baseBrowserSize} min=1 max=32 step=1>
+        <input type=number bind:value={rhythmicScale.baseBrowserFontSize} min=1 max=32 step=1>
+        <input type=range bind:value={rhythmicScale.baseBrowserFontSize} min=1 max=32 step=1>
     </label>
     <label>
         Font Size
-        <input type=number bind:value={baseFont} min=1 max=32 step=1>
-        <input type=range bind:value={baseFont} min=1 max=32 step=1>
+        <input type=number on:change={handleUpdateBaseFont} bind:value={rhythmicScale.baseFont} min=1 max=32 step=1>
+        <input type=range on:change={handleUpdateBaseFont} bind:value={rhythmicScale.baseFont} min=1 max=32 step=1>
     </label>
     <label>
         Line Height Factor (line height * baseFont)
-        <input type=number bind:value={lineHeightFactor} min=1 max=2 step=.01>
-        <input type=range bind:value={lineHeightFactor} min=1 max=2 step=.01>
+        <input type=number bind:value={rhythmicScale.lineHeightFactor} min=1 max=2 step=.01>
+        <input type=range bind:value={rhythmicScale.lineHeightFactor} min=1 max=2 step=.01>
     </label>
     <div class="opener" on:click="{() => open = !open}"></div>
 </div>
 
 <div class='bp-info'>
-    <ol start={lowBpRange}>
+    <ol start={lowBpCount}>
         {#each bpValues as bp}
             <li class="{bp === active ? 'selected' : ''}">{Math.round(bp)}</li>
-            <select bind:value={bpRatios[bp]}>
-                {#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as rat}
-                    <option value={rat}>
-                        {rat}
+            <select on:input={(e) => handleIntervalChange(e, bp)}>
+                {#each Object.keys(MusicalRatios).filter(e => isNaN(parseFloat(e))) as interval}
+                    <option value={interval}>
+                        {interval}
                     </option>
                 {/each}
             </select>
@@ -247,7 +231,7 @@
         <p style="font-size: var(--modular-size-n{-i}); line-height: var(--modular-line-height-n{-i})">
             Px: {cssVars[`modular-size-n${-i}`]}</p>
     {/each}
-    {#each range(0, 6) as i}
+    {#each Array(7).fill(0).map((e, i) => i) as i}
         <p style="font-size: var(--modular-size-l{i}); line-height: var(--modular-line-height-l{i})">Level: {i}</p>
         <p style="font-size: var(--modular-size-l{i}); line-height: var(--modular-line-height-l{i})">
             Px: {cssVars[`modular-size-l${i}`]}</p>
@@ -264,7 +248,7 @@
                 <div style="width: var(--modular-size-n{-i}); height: var(--modular-size-n{-i}); background: lightblue;"></div>
             </div>
         {/each}
-        {#each range(0, 6) as i}
+        {#each Array(7).fill(0).map((e, i) => i) as i}
             <div style="display: flex; align-items: center; flex-direction: column">
                 <p style="font-size: var(--modular-size-l0)">Level: {i}</p>
                 <p style="font-size: var(--modular-size-l0)">Px: {cssVars[`modular-size-l${i}`]}</p>
@@ -275,10 +259,15 @@
 </div>
 
 <div class="page" style="justify-content: center;">
-    <div style="display: flex; flex-direction: column; align-items: center; box-shadow: 2px 2px 8px rgba(0, 0, 0, .4); border-radius: 2px; padding: var(--modular-size-l1)">
-        <h1 style="text-align: center; font-size: var(--modular-size-l3); line-height: var(--modular-line-height-l3); margin-bottom: var(--modular-size-l0);">Hello</h1>
-        <h2 style="text-align: center; font-size: var(--modular-size-l2); line-height: var(--modular-line-height-l2); margin-bottom: var(--modular-size-l0);">Design Made Simple</h2>
-        <h3 style="text-align: center; font-size: var(--modular-size-l0); line-height: var(--modular-line-height-l0); margin-bottom: var(--modular-size-n1);">Would you like to know more?</h3>
-        <button style="text-align: center; font-size: var(--modular-size-l0); line-height: var(--modular-line-height-l0); margin-bottom: var(--modular-size-n1);">Learn More</button>
+    <div style="display: flex; flex-direction: column; align-items: center; box-shadow: 2px 2px 8px rgba(0, 0, 0, .4); border-radius: 2px; padding: var(--modular-size-l3)">
+        <h1 style="text-align: center; font-size: var(--modular-size-l4); line-height: var(--modular-line-height-l4); margin-bottom: var(--modular-size-l0);">
+            Hello</h1>
+        <h2 style="text-align: center; font-size: var(--modular-size-l3); line-height: var(--modular-line-height-l3); margin-bottom: var(--modular-size-l0)">
+            Design Made Simple</h2>
+        <h3 style="text-align: center; font-size: var(--modular-size-l2); line-height: var(--modular-line-height-l2); margin-bottom: var(--modular-size-l0);">
+            Would you like to know more?</h3>
+        <button style="text-align: center; font-size: var(--modular-size-l0); line-height: var(--modular-line-height-l0); margin-bottom: var(--modular-size-n1);">
+            Learn More
+        </button>
     </div>
 </div>
