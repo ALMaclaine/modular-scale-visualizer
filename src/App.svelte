@@ -5,17 +5,19 @@
     import {RhythmicBreakpoints} from 'rhythmic-breakpoints';
     import {RhythmicScale} from 'rhythmic-scale';
 
-    let baseViewWidth = 1280;
-    let lowBpCount = -3;
-    let highBpCount = 3;
+    let responsiveSettings = {
+        baseViewWidth: 1280,
+        lowBpCount: -3,
+        highBpCount: 3,
+        bpStep: 1
+    };
+
     let open = false;
-    let bpStep = 1;
     let cssVars;
     let bpWidths;
     let rhythmicScale = new RhythmicScale({baseFont: 16});
 
     function handleUpdateBaseFont() {
-        console.log('?');
         document.querySelector('html').style.fontSize = `${rhythmicScale.baseFont / 16 * 100}%`
     }
 
@@ -36,11 +38,11 @@
         if(mediaManager) mediaManager.removeEventListener('change', updateActive);
 
         mediaManager = new RhythmicBreakpoints({
-            baseWidth: baseViewWidth,
-            highBpCount,
-            lowBpCount,
+            baseWidth: responsiveSettings.baseViewWidth,
+            highBpCount: responsiveSettings.highBpCount,
+            lowBpCount: responsiveSettings.lowBpCount,
             ratio,
-            stepSize: bpStep
+            stepSize: responsiveSettings.bpStep
         });
 
         mediaManager.addEventListener('change', updateActive);
@@ -159,22 +161,22 @@
     </label>
     <label>
         Low BP
-        <input type=number bind:value={lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
-        <input type=range bind:value={lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
+        <input type=number bind:value={responsiveSettings.lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
+        <input type=range bind:value={responsiveSettings.lowBpCount} on:input={updateActive} min=-8 max=0 step=1>
     </label>
     <label>
         High BP
-        <input type=number bind:value={highBpCount} on:input={updateActive} min=0 max=8 step=1>
-        <input type=range bind:value={highBpCount} on:input={updateActive} min=0 max=8 step=1>
+        <input type=number bind:value={responsiveSettings.highBpCount} on:input={updateActive} min=0 max=8 step=1>
+        <input type=range bind:value={responsiveSettings.highBpCount} on:input={updateActive} min=0 max=8 step=1>
     </label>
     <label>
         Step Size
-        <input type=number bind:value={bpStep} on:input={updateActive} min=.1 max=2 step=.1>
-        <input type=range bind:value={bpStep} on:input={updateActive} min=.1 max=2 step=.1>
+        <input type=number bind:value={responsiveSettings.bpStep} on:input={updateActive} min=.1 max=2 step=.1>
+        <input type=range bind:value={responsiveSettings.bpStep} on:input={updateActive} min=.1 max=2 step=.1>
     </label>
     <label>
         BaseViewWidth
-        <input type=number bind:value={baseViewWidth} on:input={updateActive} min=640 max=2560>
+        <input type=number bind:value={responsiveSettings.baseViewWidth} on:input={updateActive} min=640 max=2560>
     </label>
     <h1>Font</h1>
     <label>
@@ -196,7 +198,7 @@
 </div>
 
 <div class='bp-info'>
-    <ol start={lowBpCount}>
+    <ol start={responsiveSettings.lowBpCount}>
         {#each bpValues as bp}
             <li class="{bp === active ? 'selected' : ''}">{Math.round(bp)}</li>
             <select on:input={(e) => handleIntervalChange(e, bp)}>
